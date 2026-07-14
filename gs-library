@@ -114,7 +114,48 @@ local Passed, Statement = pcall(function()
 				Position = UDim2.new(0, 1, 0, 1),
 				Size = UDim2.new(1, -2, 1, -2)
 			})
-			-- //
+			-- Заголовок для перетаскивания
+            local DragHandle = utility:RenderObject("Frame", {
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundTransparency = 1, -- полностью прозрачный
+                BorderColor3 = Color3.fromRGB(0, 0, 0),
+                BorderSizePixel = 0,
+                Parent = ScreenGui_MainFrame,
+                Position = UDim2.new(0, 0, 0, 0),
+                Size = UDim2.new(1, 0, 0, 20),
+                ZIndex = 10 -- выше всех элементов
+            })
+                        -- Начало перетаскивания
+            utility:CreateConnection(DragHandle.InputBegan, function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    Window.Dragging = true
+                    local mousePos = utility:MouseLocation()
+                    local framePos = ScreenGui_MainFrame.AbsolutePosition
+                    Window.DragOffset = mousePos - framePos
+                end
+            end)
+
+            -- Обновление позиции при движении
+            utility:CreateConnection(uis.InputChanged, function(Input)
+                if Window.Dragging and Input.UserInputType == Enum.UserInputType.MouseMovement then
+                    local newPos = utility:MouseLocation() - Window.DragOffset
+                    -- Ограничиваем, чтобы окно не уходило за края экрана (опционально)
+                    local viewport = game:GetService("Workspace").CurrentCamera.ViewportSize
+                    local frameSize = ScreenGui_MainFrame.AbsoluteSize
+                    newPos = Vector2.new(
+                        math.clamp(newPos.X, 0, viewport.X - frameSize.X),
+                        math.clamp(newPos.Y, 0, viewport.Y - frameSize.Y)
+                    )
+                    ScreenGui_MainFrame.Position = UDim2.new(0, newPos.X, 0, newPos.Y)
+                end
+            end)
+
+            -- Завершение перетаскивания
+            utility:CreateConnection(uis.InputEnded, function(Input)
+                if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    Window.Dragging = false
+                end
+            end)
 			local MainFrame_InnerBorder_InnerFrame = utility:RenderObject("Frame", {
 				BackgroundColor3 = Color3.fromRGB(12, 12, 12),
 				BackgroundTransparency = 0,
